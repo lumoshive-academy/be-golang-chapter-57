@@ -19,14 +19,14 @@ func main() {
 	router := gin.Default()
 
 	// Connect to gRPC services
-	productConn, err := grpc.Dial("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	productConn, err := grpc.NewClient("localhost:50051", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to Product Service: %v", err)
 	}
 	defer productConn.Close()
 	productClient := pbProduct.NewProductServiceClient(productConn)
 
-	userConn, err := grpc.Dial("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
+	userConn, err := grpc.NewClient("localhost:50052", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		log.Fatalf("Failed to connect to User Service: %v", err)
 	}
@@ -90,7 +90,7 @@ func main() {
 
 		productRoutes.GET("/:id", func(c *gin.Context) {
 			idStr := c.Param("id")
-			id, err := strconv.Atoi(idStr)
+			id, _ := strconv.Atoi(idStr)
 			req := &pbProduct.GetProductRequest{Id: uint32(id)}
 
 			res, err := productClient.GetProduct(context.Background(), req)
