@@ -59,3 +59,24 @@ func (s *UserServiceServer) Login(ctx context.Context, req *pb.LoginRequest) (*p
 
 	return &pb.LoginResponse{Token: tokenString}, nil
 }
+
+func (s *UserServiceServer) ValidateToken(ctx context.Context, req *pb.ValidateTokenRequest) (*pb.ValidateTokenResponse, error) {
+	token, err := jwt.Parse(req.Token, func(token *jwt.Token) (interface{}, error) {
+		// Ensure that the token's signing method is as expected
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, fmt.Errorf("unexpected signing method: %v", token.Header["alg"])
+		}
+		return []byte("secret"), nil
+	})
+
+	if err != nil || !token.Valid {
+		return &pb.ValidateTokenResponse{Valid: false}, nil
+	}
+
+	if claims, ok := token.Claims.(jwt.MapClaims); ok && token.Valid {
+		userID := fmt.Sprintf("%v", claims["user_id"])
+		return &pb.ValidateTokenResponse{Valid: true, UserId: userID}, nil
+	}
+
+	return &pb.ValidateTokenResponse{Valid: false}, nil
+}
